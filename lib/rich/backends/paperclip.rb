@@ -5,6 +5,21 @@ module Rich
     module Paperclip
       extend ActiveSupport::Concern
 
+      class << self
+        def normalize_attachment(attachment)
+          file_name = attachment.instance_variable_get(:@file).original_filename
+
+          normalize_file_name(file_name)
+        end
+
+        def normalize_file_name(file_name)
+          ext = File.extname(file_name).downcase
+          file_name = URI.decode(File.basename(file_name)).sub(/#{ext}/i, '').to_slug.normalize.to_s
+
+          "#{file_name}#{ext}"
+        end
+      end
+
       included do
         has_attached_file :rich_file,
                           :styles => Proc.new {|a| a.instance.set_styles },
@@ -14,7 +29,7 @@ module Rich
         validate :check_content_type
         validates_attachment_size :rich_file, :less_than=>15.megabyte, :message => "must be smaller than 15MB"
 
-        before_create :clean_file_name
+        before_post_process :clean_file_name
 
         after_create :cache_style_uris_and_save
         before_update :cache_style_uris
@@ -57,15 +72,7 @@ module Rich
       end
 
       def clean_file_name
-        extension = File.extname(rich_file_file_name).gsub(/^\.+/, '')
-        filename = rich_file_file_name.gsub(/\.#{extension}$/, '')
-
-        filename = CGI::unescape(filename)
-
-        extension = extension.downcase
-        filename = filename.downcase.gsub(/[^a-z0-9]+/i, '-')
-
-        self.rich_file.instance_write(:file_name, "#{filename}.#{extension}")
+        self.rich_file_file_name = Rich::Backends::Paperclip.normalize_attachment(rich_file)
       end
 
       module ClassMethods

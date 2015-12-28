@@ -1,5 +1,6 @@
 require 'rack/raw_upload'
 require "rich/authorize"
+require "babosa"
 
 module Rich
   class Engine < Rails::Engine
