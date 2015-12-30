@@ -7,9 +7,9 @@ module Rich
 
       class << self
         def normalize_attachment(attachment)
-          file_name = attachment.instance_variable_get(:@file).original_filename
+          return unless (file = attachment.instance_variable_get(:@file))
 
-          normalize_file_name(file_name)
+          normalize_file_name(file.original_filename)
         end
 
         def normalize_file_name(file_name)
